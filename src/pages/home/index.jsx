@@ -60,8 +60,12 @@ const { RangePicker } = DatePicker;
 
 const Home = () => {
   const [location, setLocation] = useState([]);
+
   const [departure, setDeparture] = useState('');
   const [destination, setDestination] = useState('');
+  const [dates, setDates] = useState({})
+  const [adults, setAdults] = useState(1);
+  const [children, setChildren] = useState(0);
 
 
   let options = location.map((elem) => (
@@ -74,7 +78,10 @@ const Home = () => {
   useEffect(() => {
     console.log(`Sale desde ${departure}`);
     console.log(destination)
-},[destination])
+    console.log('Aqui van las fechas', dates)
+    console.log(adults)
+    console.log(children)
+},[destination,dates, adults, children])
 
 
   useEffect(() => {
@@ -86,9 +93,45 @@ const Home = () => {
       .catch((error) => {
         console.error(error)
       })
-   
-  },[]);
- console.log(location)
+  }, []);
+  
+  function padTo2Digits(num) {
+    return num.toString().padStart(2, '0');
+  }
+  
+  function formatDate(date) {
+    return [date.getFullYear(),
+      padTo2Digits(date.getMonth() + 1),
+      padTo2Digits(date.getDate()),
+  ].join('-');
+  }
+  
+
+  const handleDates = (ev) => {
+    if (ev[0] !== null && ev[1] !== null ) {
+      setDates({
+        'departureDate': formatDate(ev[0]._d),
+        'returnDate': formatDate(ev[1]._d)
+      })
+    }
+  }
+
+
+  const handleClick = () => {
+    let object = {
+      originLocationCode: departure,
+      destinationLocationCode: destination,
+      departureDate: dates.departureDate,
+      returnDate: dates.returnDate,
+      adults: adults,
+      children: children,
+    }
+
+    console.log(object)
+    instance.post('/form', object)
+    .then((response)=>{console.log(response)})
+    .catch((error)=>{console.error(error)})
+  }
   return (
     <Layout className="layout">
       <Header>
@@ -151,18 +194,41 @@ const Home = () => {
               </AutoComplete>
             </Space>
             <div>
-              <Space direction="vertical" size={12}>
-                <RangePicker />
+              <Space direction="vertical" size={12}
+                  style={{
+                    width: '100%',
+                  }} >
+                <RangePicker allowEmpty={[false, true]}
+                      style={{
+                  width: '100%',
+                  }}
+                  onCalendarChange={(event) => {
+                    handleDates(event)
+                  }}  
+                />
               </Space>
             </div>
             <div>
               <Space direction="horizontal">
 
-                <InputNumber addonBefore="Adultos" defaultValue={1} />
-                <InputNumber addonBefore="Ninos" defaultValue={0} />
+                <InputNumber addonBefore="Adultos" defaultValue={1} min={1} max={10}
+                onChange={(item) => {
+                  setAdults(item)
+                }}
+                />
+                <InputNumber addonBefore="Ninos" defaultValue={0} min={0} max={10}
+                onChange={(item) => {
+                  setChildren(item)
+                }}
+                />
               </Space>
             </div>
           </Space>
+            <div style={{marginTop:10}}>
+            <Button type="primary" ghost onClick={() => handleClick()}>
+                Search Results
+              </Button>
+            </div>
         </div>
 
       </Content>
